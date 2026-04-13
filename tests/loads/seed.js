@@ -17,7 +17,7 @@
 require('dotenv').config();
 const path = require('path');
 const fs = require('fs');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Load models (also registers associations)
 const { sequelize, User, Client, Service, Invoice, InvoiceLine } = require('../../src/models/index');
