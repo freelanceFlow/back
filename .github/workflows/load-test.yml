@@ -47,13 +47,14 @@ jobs:
         run: npm ci
 
       - name: Sync database schema
-        run: node -e "
-          require('dotenv').config();
-          const { sequelize } = require('./src/models/index');
-          sequelize.sync({ force: true })
-            .then(() => { console.log('DB synced'); process.exit(0); })
-            .catch((e) => { console.error(e); process.exit(1); });
-        "
+        run: |
+          node -e '
+            require("dotenv").config();
+            const { sequelize } = require("./src/models/index");
+            sequelize.sync({ force: true })
+              .then(() => { console.log("DB synced"); process.exit(0); })
+              .catch((e) => { console.error(e); process.exit(1); });
+          '
 
       - name: Seed load test data
         run: node tests/loads/seed.js
