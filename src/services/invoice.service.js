@@ -42,7 +42,7 @@ async function findById(id, userId) {
 }
 
 async function create(data, userId) {
-  const { client_id, tva_rate = 20, date, lines = [] } = data;
+  const { client_id, tva_rate = 20, date, status, lines = [] } = data;
 
   const parsed = lines.map(parseLine);
   const totals = computeTotals(parsed, tva_rate);
@@ -52,6 +52,7 @@ async function create(data, userId) {
     client_id,
     tva_rate,
     issued_at: date || null,
+    ...(status && { status }),
     ...totals,
   });
 
