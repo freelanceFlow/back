@@ -12,6 +12,14 @@ jest.mock('../models/client.model', () => ({
   create: jest.fn(),
 }));
 
+jest.mock('../models', () => ({
+  Invoice: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
+  InvoiceLine: { bulkCreate: jest.fn(), destroy: jest.fn() },
+  Client: {},
+  Service: {},
+  User: {},
+}));
+
 const app = require('../app');
 const Client = require('../models/client.model');
 
