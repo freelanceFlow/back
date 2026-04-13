@@ -1,4 +1,10 @@
 const request = require('supertest');
+
+jest.mock('../config/database', () => ({
+  define: jest.fn(() => ({})),
+  authenticate: jest.fn(),
+}));
+
 const app = require('../app');
 
 describe('GET /health', () => {
