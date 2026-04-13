@@ -199,4 +199,3 @@ Si un seuil est dépassé, k6 termine avec un code d'erreur non nul (la pipeline
 ### Intégration CI/CD
 
 Le smoke test s'exécute automatiquement à chaque Pull Request vers `develop` ou `main` via le workflow `.github/workflows/load-test.yml`.
-
