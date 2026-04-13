@@ -13,6 +13,14 @@ jest.mock('../models/user.model', () => ({
   create: jest.fn(),
 }));
 
+jest.mock('../models', () => ({
+  Invoice: { findAll: jest.fn(), findOne: jest.fn(), create: jest.fn() },
+  InvoiceLine: { bulkCreate: jest.fn(), destroy: jest.fn() },
+  Client: {},
+  Service: {},
+  User: {},
+}));
+
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
   compare: jest.fn(),
