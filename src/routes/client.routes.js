@@ -1,28 +1,15 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth.middleware');
+const clientController = require('../controllers/client.controller');
 
 const router = express.Router();
 
 router.use(authMiddleware);
 
-router.get('/', (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-router.get('/:id', (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-router.post('/', (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-router.put('/:id', (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-router.delete('/:id', (req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
+router.get('/', clientController.getAll);
+router.get('/:id', clientController.getById);
+router.post('/', clientController.create);
+router.put('/:id', clientController.update);
+router.delete('/:id', clientController.remove);
 
 module.exports = router;
