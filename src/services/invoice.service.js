@@ -28,7 +28,7 @@ async function findAll(userId) {
     ],
     order: [['created_at', 'DESC']],
   });
-  const plain = invoices.map((i) => i.toJSON());
+  const plain = invoices.map((i) => (typeof i.toJSON === 'function' ? i.toJSON() : i));
   cache.set(key, plain);
   return plain;
 }

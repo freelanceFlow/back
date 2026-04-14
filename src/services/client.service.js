@@ -7,7 +7,7 @@ async function findAll(userId) {
   if (cached) return cached;
 
   const clients = await Client.findAll({ where: { user_id: userId } });
-  const plain = clients.map((c) => c.toJSON());
+  const plain = clients.map((c) => (typeof c.toJSON === 'function' ? c.toJSON() : c));
   cache.set(key, plain);
   return plain;
 }
