@@ -55,7 +55,11 @@ async function exportCsv(req, res, next) {
       name: c.name,
       email: c.email,
       company: c.company ?? '',
-      address: c.address ?? '',
+      address_line1: c.address_line1 ?? '',
+      address_line2: c.address_line2 ?? '',
+      zip_code: c.zip_code ?? '',
+      city: c.city ?? '',
+      country: c.country ?? '',
       created_at: c.created_at ? new Date(c.created_at).toISOString().slice(0, 10) : '',
     }));
 

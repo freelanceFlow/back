@@ -4,7 +4,17 @@ const User = require('../models/user.model');
 
 const SALT_ROUNDS = 10;
 
-async function register({ email, password, first_name, last_name, adress }) {
+async function register({
+  email,
+  password,
+  first_name,
+  last_name,
+  address_line1,
+  address_line2,
+  zip_code,
+  city,
+  country,
+}) {
   const existing = await User.findOne({ where: { email } });
   if (existing) {
     const error = new Error('Email already in use');
@@ -19,7 +29,11 @@ async function register({ email, password, first_name, last_name, adress }) {
     password_hash,
     first_name,
     last_name,
-    adress,
+    address_line1,
+    address_line2,
+    zip_code,
+    city,
+    country,
   });
 
   return {
@@ -54,7 +68,18 @@ async function login({ email, password }) {
 
 async function getMe(userId) {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'email', 'first_name', 'last_name', 'adress', 'created_at'],
+    attributes: [
+      'id',
+      'email',
+      'first_name',
+      'last_name',
+      'address_line1',
+      'address_line2',
+      'zip_code',
+      'city',
+      'country',
+      'created_at',
+    ],
   });
 
   if (!user) {

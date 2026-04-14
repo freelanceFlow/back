@@ -41,7 +41,11 @@ const mockClient = {
   name: 'John Doe',
   email: 'john@example.com',
   company: 'ACME',
-  address: '123 Main St',
+  address_line1: '123 Main St',
+  address_line2: 'Apt 4B',
+  zip_code: '75001',
+  city: 'Paris',
+  country: 'France',
   update: jest.fn(),
   destroy: jest.fn(),
 };

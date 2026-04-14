@@ -47,7 +47,11 @@ describe('Auth Routes', () => {
       password: 'password123',
       first_name: 'John',
       last_name: 'Doe',
-      adress: '123 Main St',
+      address_line1: '123 Main St',
+      address_line2: 'Apt 4B',
+      zip_code: '75001',
+      city: 'Paris',
+      country: 'France',
     };
 
     it('should register a new user', async () => {
@@ -71,7 +75,11 @@ describe('Auth Routes', () => {
         password_hash: 'hashed_password',
         first_name: 'John',
         last_name: 'Doe',
-        adress: '123 Main St',
+        address_line1: '123 Main St',
+        address_line2: 'Apt 4B',
+        zip_code: '75001',
+        city: 'Paris',
+        country: 'France',
       });
     });
 
@@ -138,7 +146,10 @@ describe('Auth Routes', () => {
         email: 'test@test.com',
         first_name: 'John',
         last_name: 'Doe',
-        adress: '123 Main St',
+        address_line1: '123 Main St',
+        zip_code: '75001',
+        city: 'Paris',
+        country: 'France',
         created_at: '2024-01-01',
       });
 

@@ -62,14 +62,20 @@ const mockFullInvoice = {
     first_name: 'John',
     last_name: 'Doe',
     email: 'john@test.com',
-    adress: '123 Rue Test, Paris',
+    address_line1: '123 Rue Test',
+    zip_code: '75000',
+    city: 'Paris',
+    country: 'France',
   },
   Client: {
     id: 1,
     name: 'Acme Corp',
     email: 'acme@test.com',
     company: 'Acme Inc',
-    address: '456 Avenue Client, Lyon',
+    address_line1: '456 Avenue Client',
+    zip_code: '69000',
+    city: 'Lyon',
+    country: 'France',
   },
   InvoiceLines: [
     {

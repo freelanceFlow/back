@@ -7,7 +7,20 @@ async function generateInvoicePdf(invoiceId, userId) {
     include: [
       { model: Client },
       { model: InvoiceLine, include: [{ model: Service }] },
-      { model: User, attributes: ['id', 'first_name', 'last_name', 'email', 'adress'] },
+      {
+        model: User,
+        attributes: [
+          'id',
+          'first_name',
+          'last_name',
+          'email',
+          'address_line1',
+          'address_line2',
+          'zip_code',
+          'city',
+          'country',
+        ],
+      },
     ],
   });
 
@@ -29,7 +42,10 @@ async function generateInvoicePdf(invoiceId, userId) {
   doc.fontSize(10);
   doc.text(`${user.first_name} ${user.last_name}`, 50, 80);
   doc.text(user.email);
-  if (user.adress) doc.text(user.adress);
+  if (user.address_line1) doc.text(user.address_line1);
+  if (user.address_line2) doc.text(user.address_line2);
+  if (user.zip_code || user.city) doc.text(`${user.zip_code ?? ''} ${user.city ?? ''}`.trim());
+  if (user.country) doc.text(user.country);
 
   const invoiceNumber = `INV-${String(invoice.id).padStart(5, '0')}`;
   const issuedDate = invoice.issued_at
@@ -46,7 +62,11 @@ async function generateInvoicePdf(invoiceId, userId) {
   doc.fontSize(10);
   doc.text(client.name);
   if (client.company) doc.text(client.company);
-  if (client.address) doc.text(client.address);
+  if (client.address_line1) doc.text(client.address_line1);
+  if (client.address_line2) doc.text(client.address_line2);
+  if (client.zip_code || client.city)
+    doc.text(`${client.zip_code ?? ''} ${client.city ?? ''}`.trim());
+  if (client.country) doc.text(client.country);
   doc.text(client.email);
 
   const tableTop = 260;
