@@ -2,7 +2,6 @@
 
 DOC POSTMAN : https://documenter.getpostman.com/view/24740089/2sBXitDo3R
 
-
 API REST pour la gestion d'activité freelance : clients, prestations, factures et génération de PDF.
 
 ## Stack technique
@@ -12,6 +11,8 @@ API REST pour la gestion d'activité freelance : clients, prestations, factures 
 - **ORM** : Sequelize (PostgreSQL)
 - **Auth** : JWT (bcrypt + jsonwebtoken)
 - **PDF** : PDFKit
+- **Upload** : Multer (stockage base64 en BDD)
+- **Email** : Resend
 - **Tests** : Jest + Supertest
 - **Qualité** : ESLint, Prettier, Husky, lint-staged
 - **CI/CD** : GitHub Actions (lint, tests, build Docker, déploiement)
@@ -33,26 +34,28 @@ cp .env.example .env
 
 ## Scripts disponibles
 
-| Commande             | Description                          |
-|----------------------|--------------------------------------|
-| `npm start`          | Lancer le serveur en production      |
-| `npm run dev`        | Lancer avec nodemon (hot reload)     |
-| `npm test`           | Lancer les tests avec couverture     |
-| `npm run test:watch` | Tests en mode watch                  |
-| `npm run lint`       | Vérifier le code avec ESLint         |
-| `npm run lint:fix`   | Corriger automatiquement le linting  |
-| `npm run format`     | Formater le code avec Prettier       |
-| `npm run format:check` | Vérifier le formatage              |
+| Commande               | Description                         |
+|------------------------|-------------------------------------|
+| `npm start`            | Lancer le serveur en production     |
+| `npm run dev`          | Lancer avec nodemon (hot reload)    |
+| `npm test`             | Lancer les tests avec couverture    |
+| `npm run test:watch`   | Tests en mode watch                 |
+| `npm run lint`         | Vérifier le code avec ESLint        |
+| `npm run lint:fix`     | Corriger automatiquement le linting |
+| `npm run format`       | Formater le code avec Prettier      |
+| `npm run format:check` | Vérifier le formatage               |
 
 ## Variables d'environnement
 
-| Variable       | Description                        | Défaut        |
-|----------------|------------------------------------|---------------|
-| `PORT`         | Port du serveur                    | `3000`        |
-| `NODE_ENV`     | Environnement (development/production) | `development` |
-| `DATABASE_URL` | URL de connexion PostgreSQL        | —             |
-| `JWT_SECRET`   | Clé secrète pour les tokens JWT    | —             |
-| `JWT_EXPIRES_IN` | Durée de validité des tokens     | `24h`         |
+| Variable            | Description                            | Défaut        |
+|---------------------|----------------------------------------|---------------|
+| `PORT`              | Port du serveur                        | `3000`        |
+| `NODE_ENV`          | Environnement (development/production) | `development` |
+| `DATABASE_URL`      | URL de connexion PostgreSQL            | —             |
+| `JWT_SECRET`        | Clé secrète pour les tokens JWT        | —             |
+| `JWT_EXPIRES_IN`    | Durée de validité des tokens           | `24h`         |
+| `RESEND_API_KEY`    | Clé API Resend (envoi d'emails)        | —             |
+| `RESEND_FROM_EMAIL` | Adresse email d'expédition             | —             |
 
 ## Docker
 
@@ -69,20 +72,40 @@ docker run -p 3000:3000 --env-file .env freelanceflow-back
 ```
 ├── src/
 │   ├── __tests__/        # Tests unitaires et d'intégration
-│   ├── config/           # Configuration (base de données)
+│   ├── config/           # Configuration (BDD, cache, upload)
 │   ├── controllers/      # Logique des contrôleurs
-│   ├── middlewares/       # Middlewares (auth JWT, etc.)
+│   ├── middlewares/      # Middlewares (auth JWT, etc.)
 │   ├── models/           # Modèles Sequelize
 │   ├── routes/           # Définition des routes
 │   ├── services/         # Logique métier
 │   └── app.js            # Configuration Express
 ├── migrations/           # Migrations Sequelize
-├── seeders/              # Seeds de données
+├── tests/loads/          # Tests de charge k6
 ├── .github/workflows/    # Pipelines CI/CD
 ├── server.js             # Point d'entrée
 ├── Dockerfile            # Image Docker
 └── package.json
 ```
+
+## Export CSV
+
+Les clients et les factures peuvent être exportés en CSV (délimiteur `;`, encodage UTF-8).
+
+- `GET /api/clients/export` — une ligne par client, avec toutes les informations d'adresse
+- `GET /api/invoices/export` — une ligne par ligne de facture, avec les informations de la facture répétées
+
+Le fichier est retourné avec le header `Content-Disposition: attachment` pour déclencher le téléchargement.
+
+## Envoi d'email
+
+Une facture peut être envoyée par email au client via :
+
+```
+POST /api/invoices/:id/send
+Authorization: Bearer <token>
+```
+
+L'envoi utilise le service **Resend** (configuré via `RESEND_API_KEY` et `RESEND_FROM_EMAIL`).
 
 ## CI/CD
 
@@ -212,3 +235,37 @@ k6 run --env BASE_URL=http://localhost:3000 tests/loads/scenarios/rate-limit.js
 ```
 
 Ce scénario envoie 110 requêtes depuis un seul VU sans pause et vérifie qu'au moins une réponse 429 est reçue.
+
+## Logo utilisateur
+
+Les utilisateurs peuvent uploader un logo qui sera intégré automatiquement dans leurs factures PDF.
+
+### Upload
+
+```
+POST /api/auth/logo
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+Champ : logo (fichier image)
+```
+
+Formats acceptés : `.jpg`, `.jpeg`, `.png`
+Taille max : **2 MB**
+
+### Stockage
+
+Le logo est converti en **base64** et stocké directement dans la colonne `logo_data` (type `TEXT`) de la table `users`. Aucun fichier n'est écrit sur le disque, ce qui rend la solution compatible Docker sans configuration de volume.
+
+### Récupération
+
+```
+GET /api/auth/me
+Authorization: Bearer <token>
+```
+
+La réponse inclut le champ `logo_data` au format data URI (`data:image/png;base64,...`), utilisable directement comme attribut `src` d'une balise `<img>`.
+
+### Intégration PDF
+
+Lors de la génération d'une facture (`GET /api/invoices/:id/pdf`), le logo est automatiquement affiché en haut à gauche du document si l'utilisateur en a uploadé un.
