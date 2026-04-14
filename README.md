@@ -54,52 +54,6 @@ cp .env.example .env
 | `JWT_SECRET`   | Clé secrète pour les tokens JWT    | —             |
 | `JWT_EXPIRES_IN` | Durée de validité des tokens     | `24h`         |
 
-## Endpoints API
-
-### Authentification
-
-| Action             | Méthode | Route               | Accès    |
-|--------------------|---------|----------------------|----------|
-| Créer un compte    | POST    | `/api/auth/register` | publique |
-| Se connecter       | POST    | `/api/auth/login`    | publique |
-| Profil connecté    | GET     | `/api/auth/me`       | protégée |
-
-### Clients
-
-| Action             | Méthode | Route               | Accès    |
-|--------------------|---------|----------------------|----------|
-| Lister les clients | GET     | `/api/clients`       | protégée |
-| Créer un client    | POST    | `/api/clients`       | protégée |
-| Consulter un client| GET     | `/api/clients/:id`   | protégée |
-| Modifier un client | PUT     | `/api/clients/:id`   | protégée |
-| Supprimer un client| DELETE  | `/api/clients/:id`   | protégée |
-
-### Prestations
-
-| Action                 | Méthode | Route               | Accès    |
-|------------------------|---------|----------------------|----------|
-| Lister les prestations | GET     | `/api/services`      | protégée |
-| Créer une prestation   | POST    | `/api/services`      | protégée |
-| Modifier une prestation| PUT     | `/api/services/:id`  | protégée |
-| Supprimer une prestation| DELETE | `/api/services/:id`  | protégée |
-
-### Factures
-
-| Action                  | Méthode | Route                     | Accès    |
-|-------------------------|---------|---------------------------|----------|
-| Lister les factures     | GET     | `/api/invoices`           | protégée |
-| Créer une facture       | POST    | `/api/invoices`           | protégée |
-| Consulter une facture   | GET     | `/api/invoices/:id`       | protégée |
-| Modifier une facture    | PUT     | `/api/invoices/:id`       | protégée |
-| Supprimer une facture   | DELETE  | `/api/invoices/:id`       | protégée |
-| Télécharger le PDF      | GET     | `/api/invoices/:id/pdf`   | protégée |
-
-### Santé
-
-| Action       | Méthode | Route     | Accès    |
-|--------------|---------|-----------|----------|
-| Health check | GET     | `/health` | publique |
-
 ## Docker
 
 ```bash
@@ -199,3 +153,27 @@ Si un seuil est dépassé, k6 termine avec un code d'erreur non nul (la pipeline
 ### Intégration CI/CD
 
 Le smoke test s'exécute automatiquement à chaque Pull Request vers `develop` ou `main` via le workflow `.github/workflows/load-test.yml`.
+
+## Cache
+
+L'API utilise un cache en mémoire via `node-cache` pour réduire la charge sur la base de données.
+
+### Routes mises en cache
+
+| Route | Clé de cache | TTL |
+|---|---|---|
+| `GET /api/clients` | `clients_{userId}` | 60s |
+| `GET /api/services` | `services_{userId}` | 60s |
+| `GET /api/invoices` | `invoices_{userId}` | 60s |
+
+### Fonctionnement
+
+- Le cache est isolé **par utilisateur** via la clé `{ressource}_{userId}` — un utilisateur ne peut jamais accéder aux données d'un autre.
+- Au premier appel (cache miss), la donnée est récupérée depuis la BDD puis stockée en cache.
+- Aux appels suivants (cache hit), la donnée est retournée directement depuis la mémoire, sans requête BDD.
+- Le cache est **invalidé automatiquement** à chaque mutation (`POST`, `PUT`, `DELETE`) pour garantir la cohérence des données.
+- Le TTL de 60 secondes sert de filet de sécurité en cas d'invalidation manquée.
+
+### Configuration
+
+Le cache est instancié une seule fois dans `src/config/cache.js` et partagé par tous les services. Modifier le TTL par défaut à cet endroit suffit à l'appliquer globalement.
