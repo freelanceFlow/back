@@ -1,12 +1,17 @@
 const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+let resend;
+function getResend() {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 async function sendInvoiceEmail({ to, clientName, invoiceNumber, pdfBuffer }) {
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+  const { data, error } = await getResend().emails.send({
+    from: fromEmail,
     to,
     subject: `Facture ${invoiceNumber}`,
     html: `
