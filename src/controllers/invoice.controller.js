@@ -1,5 +1,6 @@
 const invoiceService = require('../services/invoice.service');
 const pdfService = require('../services/pdf.service');
+const emailService = require('../services/email.service');
 
 async function getAll(req, res, next) {
   try {
@@ -57,4 +58,32 @@ async function getPdf(req, res, next) {
   }
 }
 
-module.exports = { getAll, getById, create, update, remove, getPdf };
+async function sendEmail(req, res, next) {
+  try {
+    const { doc, invoiceNumber } = await pdfService.generateInvoicePdf(req.params.id, req.user.id);
+    const invoice = await invoiceService.findById(req.params.id, req.user.id);
+
+    const chunks = [];
+    doc.on('data', (chunk) => chunks.push(chunk));
+
+    await new Promise((resolve, reject) => {
+      doc.on('end', resolve);
+      doc.on('error', reject);
+    });
+
+    const pdfBuffer = Buffer.concat(chunks);
+
+    const data = await emailService.sendInvoiceEmail({
+      to: invoice.Client.email,
+      clientName: invoice.Client.name,
+      invoiceNumber,
+      pdfBuffer,
+    });
+
+    res.json({ message: 'Invoice sent successfully', emailId: data.id });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { getAll, getById, create, update, remove, getPdf, sendEmail };
