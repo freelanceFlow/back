@@ -28,6 +28,15 @@ async function getMe(req, res, next) {
   }
 }
 
+async function updateMe(req, res, next) {
+  try {
+    const user = await authService.updateMe(req.user.id, req.body);
+    res.json(user);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function uploadLogo(req, res, next) {
   try {
     if (!req.file) {
@@ -49,4 +58,4 @@ async function uploadLogo(req, res, next) {
   }
 }
 
-module.exports = { register, login, getMe, uploadLogo };
+module.exports = { register, login, getMe, updateMe, uploadLogo };
