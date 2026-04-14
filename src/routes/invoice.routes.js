@@ -7,6 +7,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 router.get('/', invoiceController.getAll);
+router.get('/export', invoiceController.exportCsv);
 router.get('/:id', invoiceController.getById);
 router.get('/:id/pdf', invoiceController.getPdf);
 router.post('/', invoiceController.create);
