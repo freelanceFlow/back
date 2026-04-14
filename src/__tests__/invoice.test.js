@@ -6,6 +6,12 @@ jest.mock('../config/database', () => ({
   authenticate: jest.fn(),
 }));
 
+jest.mock('../config/cache', () => ({
+  get: jest.fn().mockReturnValue(null),
+  set: jest.fn(),
+  del: jest.fn(),
+}));
+
 jest.mock('../models', () => {
   const Invoice = {
     findAll: jest.fn(),
