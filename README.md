@@ -177,3 +177,38 @@ L'API utilise un cache en mémoire via `node-cache` pour réduire la charge sur 
 ### Configuration
 
 Le cache est instancié une seule fois dans `src/config/cache.js` et partagé par tous les services. Modifier le TTL par défaut à cet endroit suffit à l'appliquer globalement.
+
+## Rate Limiting
+
+L'API applique un rate limit global sur toutes les routes via `express-rate-limit`.
+
+### Configuration
+
+| Paramètre | Valeur |
+|---|---|
+| Fenêtre de temps | 15 minutes |
+| Requêtes max par IP | 100 |
+| Code de réponse en cas de dépassement | `429 Too Many Requests` |
+
+### Comportement
+
+- Le compteur est **par adresse IP** et s'applique à toutes les routes sans exception.
+- Chaque réponse inclut les headers suivants :
+  - `RateLimit` — limite et nombre de requêtes restantes
+  - `RateLimit-Policy` — détail de la politique appliquée
+- En cas de dépassement, l'API retourne :
+
+```json
+HTTP 429
+{ "message": "Too many requests, please try again later." }
+```
+
+### Test du rate limit
+
+Un scénario k6 dédié permet de vérifier que le blocage intervient bien après 100 requêtes :
+
+```bash
+k6 run --env BASE_URL=http://localhost:3000 tests/loads/scenarios/rate-limit.js
+```
+
+Ce scénario envoie 110 requêtes depuis un seul VU sans pause et vérifie qu'au moins une réponse 429 est reçue.

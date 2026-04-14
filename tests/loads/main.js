@@ -64,3 +64,4 @@ export const options = {
 // ---------------------------------------------------------------------------
 export { default as authTest } from './scenarios/auth.js';
 export { default as invoicesTest } from './scenarios/invoices.js';
+export { default as rateLimitTest } from './scenarios/rate-limit.js';
