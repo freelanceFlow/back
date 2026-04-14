@@ -24,3 +24,6 @@ Thumbs.db
 .agents
 
 skills-lock.json
+
+public/uploads/logos/*
+!public/uploads/logos/.gitkeep

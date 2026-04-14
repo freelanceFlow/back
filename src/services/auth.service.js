@@ -78,6 +78,7 @@ async function getMe(userId) {
       'zip_code',
       'city',
       'country',
+      'logo_data',
       'created_at',
     ],
   });

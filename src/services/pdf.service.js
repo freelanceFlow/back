@@ -19,6 +19,7 @@ async function generateInvoicePdf(invoiceId, userId) {
           'zip_code',
           'city',
           'country',
+          'logo_data',
         ],
       },
     ],
@@ -39,8 +40,21 @@ async function generateInvoicePdf(invoiceId, userId) {
   doc.fontSize(20).text('FACTURE', { align: 'right' });
   doc.moveDown(0.5);
 
+  // Logo utilisateur stocké en base (data URI base64)
+  let userInfoY = 80;
+  if (user.logo_data) {
+    try {
+      const base64 = user.logo_data.split(',')[1];
+      const buffer = Buffer.from(base64, 'base64');
+      doc.image(buffer, 50, 45, { fit: [120, 60] });
+      userInfoY = 120;
+    } catch {
+      // données corrompues ou format non supporté, on passe
+    }
+  }
+
   doc.fontSize(10);
-  doc.text(`${user.first_name} ${user.last_name}`, 50, 80);
+  doc.text(`${user.first_name} ${user.last_name}`, 50, userInfoY);
   doc.text(user.email);
   if (user.address_line1) doc.text(user.address_line1);
   if (user.address_line2) doc.text(user.address_line2);
