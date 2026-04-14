@@ -92,4 +92,38 @@ async function getMe(userId) {
   return user;
 }
 
-module.exports = { register, login, getMe };
+async function updateMe(
+  userId,
+  { email, first_name, last_name, address_line1, address_line2, zip_code, city, country }
+) {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 404;
+    throw error;
+  }
+
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      const error = new Error('Email already in use');
+      error.status = 409;
+      throw error;
+    }
+  }
+
+  await user.update({
+    email,
+    first_name,
+    last_name,
+    address_line1,
+    address_line2,
+    zip_code,
+    city,
+    country,
+  });
+
+  return user;
+}
+
+module.exports = { register, login, getMe, updateMe };
