@@ -131,3 +131,5 @@ async function exportCsv(req, res, next) {
     next(error);
   }
 }
+
+module.exports = { getAll, getById, create, update, remove, getPdf, sendEmail, exportCsv };
