@@ -1,3 +1,4 @@
+const { stringify } = require('csv-stringify');
 const clientService = require('../services/client.service');
 
 async function getAll(req, res, next) {
@@ -45,4 +46,29 @@ async function remove(req, res, next) {
   }
 }
 
-module.exports = { getAll, getById, create, update, remove };
+async function exportCsv(req, res, next) {
+  try {
+    const clients = await clientService.findAll(req.user.id);
+
+    const rows = clients.map((c) => ({
+      id: c.id,
+      name: c.name,
+      email: c.email,
+      company: c.company ?? '',
+      address: c.address ?? '',
+      created_at: c.created_at ? new Date(c.created_at).toISOString().slice(0, 10) : '',
+    }));
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="clients.csv"');
+
+    stringify(rows, { header: true, delimiter: ';' }, (err, output) => {
+      if (err) return next(err);
+      res.send(output);
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { getAll, getById, create, update, remove, exportCsv };
