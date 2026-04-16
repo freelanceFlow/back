@@ -205,7 +205,10 @@ describe('Invoice Routes', () => {
         .send({ status: 'sent' });
 
       expect(res.status).toBe(200);
-      expect(mockInvoice.update).toHaveBeenCalledWith({ status: 'sent' });
+      expect(mockInvoice.update).toHaveBeenCalledWith(
+        { status: 'sent' },
+        { transaction: undefined }
+      );
     });
 
     it('should update invoice with new lines', async () => {
