@@ -33,13 +33,14 @@ async function findAll(userId) {
   return plain;
 }
 
-async function findById(id, userId) {
+async function findById(id, userId, transaction) {
   const invoice = await Invoice.findOne({
     where: { id, user_id: userId },
     include: [
       { model: Client, attributes: ['id', 'name', 'email'] },
       { model: InvoiceLine, include: [{ model: Service, attributes: ['id', 'label'] }] },
     ],
+    transaction,
   });
   if (!invoice) {
     const error = new Error('Invoice not found');
@@ -79,7 +80,7 @@ async function create(data, userId) {
   return findById(invoice.id, userId);
 }
 
-async function update(id, data, userId) {
+async function update(id, data, userId, transaction) {
   const invoice = await findById(id, userId);
 
   const { lines, date, totals: _totals, ...fields } = data;
@@ -89,7 +90,7 @@ async function update(id, data, userId) {
   }
 
   if (lines) {
-    await InvoiceLine.destroy({ where: { invoice_id: id } });
+    await InvoiceLine.destroy({ where: { invoice_id: id }, transaction });
 
     const parsed = lines.map(parseLine);
     const tvaRate = fields.tva_rate ?? invoice.tva_rate;
@@ -103,10 +104,10 @@ async function update(id, data, userId) {
       unit_price: l.unit_price,
       total: +(l.quantity * l.unit_price).toFixed(2),
     }));
-    await InvoiceLine.bulkCreate(invoiceLines);
+    await InvoiceLine.bulkCreate(invoiceLines, { transaction });
   }
 
-  await invoice.update(fields);
+  await invoice.update(fields, { transaction });
   cache.del(`invoices_${userId}`);
   return findById(id, userId);
 }
