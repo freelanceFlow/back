@@ -11,10 +11,10 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 
-// Rate limiting — 100 requêtes max par IP toutes les 15 minutes
+// Rate limiting — 10000 requêtes max par IP toutes les 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 100,
+  limit: 10000,
   standardHeaders: 'draft-8',
   message: { message: 'Too many requests, please try again later.' },
 });
