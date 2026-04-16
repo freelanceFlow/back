@@ -1,7 +1,7 @@
 const PDFDocument = require('pdfkit');
 const { Invoice, InvoiceLine, Client, Service, User } = require('../models');
 
-async function generateInvoicePdf(invoiceId, userId) {
+async function generateInvoicePdf(invoiceId, userId, transaction) {
   const invoice = await Invoice.findOne({
     where: { id: invoiceId, user_id: userId },
     include: [
@@ -23,6 +23,7 @@ async function generateInvoicePdf(invoiceId, userId) {
         ],
       },
     ],
+    transaction,
   });
 
   if (!invoice) {

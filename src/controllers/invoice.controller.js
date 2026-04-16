@@ -2,6 +2,7 @@ const { stringify } = require('csv-stringify');
 const invoiceService = require('../services/invoice.service');
 const pdfService = require('../services/pdf.service');
 const emailService = require('../services/email.service');
+const { sequelize } = require('../models');
 
 async function getAll(req, res, next) {
   try {
@@ -60,9 +61,21 @@ async function getPdf(req, res, next) {
 }
 
 async function sendEmail(req, res, next) {
+  const transaction = await sequelize.transaction();
   try {
-    const { doc, invoiceNumber } = await pdfService.generateInvoicePdf(req.params.id, req.user.id);
-    const invoice = await invoiceService.findById(req.params.id, req.user.id);
+    await invoiceService.update(
+      req.params.id,
+      { status: 'sent', date: new Date() },
+      req.user.id,
+      transaction
+    );
+
+    const { doc, invoiceNumber } = await pdfService.generateInvoicePdf(
+      req.params.id,
+      req.user.id,
+      transaction
+    );
+    const invoice = await invoiceService.findById(req.params.id, req.user.id, transaction);
 
     const chunks = [];
     doc.on('data', (chunk) => chunks.push(chunk));
@@ -81,10 +94,10 @@ async function sendEmail(req, res, next) {
       pdfBuffer,
     });
 
-    await invoiceService.update(req.params.id, { status: 'sent' }, req.user.id);
-
+    await transaction.commit();
     res.json({ message: 'Invoice sent successfully', emailId: data.id });
   } catch (error) {
+    await transaction.rollback();
     next(error);
   }
 }
