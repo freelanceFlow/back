@@ -62,14 +62,20 @@ const mockFullInvoice = {
     first_name: 'John',
     last_name: 'Doe',
     email: 'john@test.com',
-    adress: '123 Rue Test, Paris',
+    address_line1: '123 Rue Test',
+    zip_code: '75000',
+    city: 'Paris',
+    country: 'France',
   },
   Client: {
     id: 1,
     name: 'Acme Corp',
     email: 'acme@test.com',
     company: 'Acme Inc',
-    address: '456 Avenue Client, Lyon',
+    address_line1: '456 Avenue Client',
+    zip_code: '69000',
+    city: 'Lyon',
+    country: 'France',
   },
   InvoiceLines: [
     {
@@ -131,11 +137,26 @@ describe('GET /api/invoices/:id/pdf', () => {
     expect(PDFDocument).toHaveBeenCalled();
 
     const mockDoc = PDFDocument.mock.results[0].value;
-    expect(mockDoc.text).toHaveBeenCalledWith('FACTURE', { align: 'right' });
-    expect(mockDoc.text).toHaveBeenCalledWith('John Doe', 50, 80);
-    expect(mockDoc.text).toHaveBeenCalledWith('john@test.com');
-    expect(mockDoc.text).toHaveBeenCalledWith('Acme Corp');
-    expect(mockDoc.text).toHaveBeenCalledWith('Acme Inc');
+    expect(mockDoc.text).toHaveBeenCalledWith('FACTURE', 350, 45, { width: 200, align: 'right' });
+    expect(mockDoc.text).toHaveBeenCalledWith('ÉMETTEUR', 50, expect.any(Number), { width: 230 });
+    expect(mockDoc.text).toHaveBeenCalledWith(
+      'DESTINATAIRE',
+      expect.any(Number),
+      expect.any(Number),
+      { width: 230, align: 'right' }
+    );
+    expect(mockDoc.text).toHaveBeenCalledWith('John Doe', 50, expect.any(Number), { width: 230 });
+    expect(mockDoc.text).toHaveBeenCalledWith('john@test.com', 50, expect.any(Number), {
+      width: 230,
+    });
+    expect(mockDoc.text).toHaveBeenCalledWith('Acme Corp', expect.any(Number), expect.any(Number), {
+      width: 230,
+      align: 'right',
+    });
+    expect(mockDoc.text).toHaveBeenCalledWith('Acme Inc', expect.any(Number), expect.any(Number), {
+      width: 230,
+      align: 'right',
+    });
     expect(mockDoc.text).toHaveBeenCalledWith('Dev Web', expect.any(Number), expect.any(Number), {
       width: 220,
     });

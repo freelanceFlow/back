@@ -66,7 +66,10 @@ export default function () {
           password: 'LoadTest123!',
           first_name: 'Load',
           last_name: 'Reg',
-          adress: '1 rue du Test',
+          address_line1: '1 rue du Test',
+          zip_code: '75000',
+          city: 'Paris',
+          country: 'France',
         }),
         { headers: { 'Content-Type': 'application/json' } }
       );

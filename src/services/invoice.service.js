@@ -1,4 +1,5 @@
 const { Invoice, InvoiceLine, Client, Service } = require('../models');
+const cache = require('../config/cache');
 
 function parseLine(l) {
   return {
@@ -15,7 +16,11 @@ function computeTotals(lines, tvaRate) {
 }
 
 async function findAll(userId) {
-  return Invoice.findAll({
+  const key = `invoices_${userId}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const invoices = await Invoice.findAll({
     where: { user_id: userId },
     include: [
       { model: Client, attributes: ['id', 'name', 'email'] },
@@ -23,6 +28,9 @@ async function findAll(userId) {
     ],
     order: [['created_at', 'DESC']],
   });
+  const plain = invoices.map((i) => (typeof i.toJSON === 'function' ? i.toJSON() : i));
+  cache.set(key, plain);
+  return plain;
 }
 
 async function findById(id, userId) {
@@ -42,7 +50,7 @@ async function findById(id, userId) {
 }
 
 async function create(data, userId) {
-  const { client_id, tva_rate = 20, date, lines = [] } = data;
+  const { client_id, tva_rate = 20, date, status, lines = [] } = data;
 
   const parsed = lines.map(parseLine);
   const totals = computeTotals(parsed, tva_rate);
@@ -52,6 +60,7 @@ async function create(data, userId) {
     client_id,
     tva_rate,
     issued_at: date || null,
+    ...(status && { status }),
     ...totals,
   });
 
@@ -66,6 +75,7 @@ async function create(data, userId) {
     await InvoiceLine.bulkCreate(invoiceLines);
   }
 
+  cache.del(`invoices_${userId}`);
   return findById(invoice.id, userId);
 }
 
@@ -97,12 +107,14 @@ async function update(id, data, userId) {
   }
 
   await invoice.update(fields);
+  cache.del(`invoices_${userId}`);
   return findById(id, userId);
 }
 
 async function remove(id, userId) {
   const invoice = await findById(id, userId);
   await invoice.destroy();
+  cache.del(`invoices_${userId}`);
 }
 
 module.exports = { findAll, findById, create, update, remove };

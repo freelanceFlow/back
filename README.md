@@ -2,7 +2,6 @@
 
 DOC POSTMAN : https://documenter.getpostman.com/view/24740089/2sBXitDo3R
 
-
 API REST pour la gestion d'activité freelance : clients, prestations, factures et génération de PDF.
 
 ## Stack technique
@@ -12,6 +11,8 @@ API REST pour la gestion d'activité freelance : clients, prestations, factures 
 - **ORM** : Sequelize (PostgreSQL)
 - **Auth** : JWT (bcrypt + jsonwebtoken)
 - **PDF** : PDFKit
+- **Upload** : Multer (stockage base64 en BDD)
+- **Email** : Resend
 - **Tests** : Jest + Supertest
 - **Qualité** : ESLint, Prettier, Husky, lint-staged
 - **CI/CD** : GitHub Actions (lint, tests, build Docker, déploiement)
@@ -33,72 +34,28 @@ cp .env.example .env
 
 ## Scripts disponibles
 
-| Commande             | Description                          |
-|----------------------|--------------------------------------|
-| `npm start`          | Lancer le serveur en production      |
-| `npm run dev`        | Lancer avec nodemon (hot reload)     |
-| `npm test`           | Lancer les tests avec couverture     |
-| `npm run test:watch` | Tests en mode watch                  |
-| `npm run lint`       | Vérifier le code avec ESLint         |
-| `npm run lint:fix`   | Corriger automatiquement le linting  |
-| `npm run format`     | Formater le code avec Prettier       |
-| `npm run format:check` | Vérifier le formatage              |
+| Commande               | Description                         |
+|------------------------|-------------------------------------|
+| `npm start`            | Lancer le serveur en production     |
+| `npm run dev`          | Lancer avec nodemon (hot reload)    |
+| `npm test`             | Lancer les tests avec couverture    |
+| `npm run test:watch`   | Tests en mode watch                 |
+| `npm run lint`         | Vérifier le code avec ESLint        |
+| `npm run lint:fix`     | Corriger automatiquement le linting |
+| `npm run format`       | Formater le code avec Prettier      |
+| `npm run format:check` | Vérifier le formatage               |
 
 ## Variables d'environnement
 
-| Variable       | Description                        | Défaut        |
-|----------------|------------------------------------|---------------|
-| `PORT`         | Port du serveur                    | `3000`        |
-| `NODE_ENV`     | Environnement (development/production) | `development` |
-| `DATABASE_URL` | URL de connexion PostgreSQL        | —             |
-| `JWT_SECRET`   | Clé secrète pour les tokens JWT    | —             |
-| `JWT_EXPIRES_IN` | Durée de validité des tokens     | `24h`         |
-
-## Endpoints API
-
-### Authentification
-
-| Action             | Méthode | Route               | Accès    |
-|--------------------|---------|----------------------|----------|
-| Créer un compte    | POST    | `/api/auth/register` | publique |
-| Se connecter       | POST    | `/api/auth/login`    | publique |
-| Profil connecté    | GET     | `/api/auth/me`       | protégée |
-
-### Clients
-
-| Action             | Méthode | Route               | Accès    |
-|--------------------|---------|----------------------|----------|
-| Lister les clients | GET     | `/api/clients`       | protégée |
-| Créer un client    | POST    | `/api/clients`       | protégée |
-| Consulter un client| GET     | `/api/clients/:id`   | protégée |
-| Modifier un client | PUT     | `/api/clients/:id`   | protégée |
-| Supprimer un client| DELETE  | `/api/clients/:id`   | protégée |
-
-### Prestations
-
-| Action                 | Méthode | Route               | Accès    |
-|------------------------|---------|----------------------|----------|
-| Lister les prestations | GET     | `/api/services`      | protégée |
-| Créer une prestation   | POST    | `/api/services`      | protégée |
-| Modifier une prestation| PUT     | `/api/services/:id`  | protégée |
-| Supprimer une prestation| DELETE | `/api/services/:id`  | protégée |
-
-### Factures
-
-| Action                  | Méthode | Route                     | Accès    |
-|-------------------------|---------|---------------------------|----------|
-| Lister les factures     | GET     | `/api/invoices`           | protégée |
-| Créer une facture       | POST    | `/api/invoices`           | protégée |
-| Consulter une facture   | GET     | `/api/invoices/:id`       | protégée |
-| Modifier une facture    | PUT     | `/api/invoices/:id`       | protégée |
-| Supprimer une facture   | DELETE  | `/api/invoices/:id`       | protégée |
-| Télécharger le PDF      | GET     | `/api/invoices/:id/pdf`   | protégée |
-
-### Santé
-
-| Action       | Méthode | Route     | Accès    |
-|--------------|---------|-----------|----------|
-| Health check | GET     | `/health` | publique |
+| Variable            | Description                            | Défaut        |
+|---------------------|----------------------------------------|---------------|
+| `PORT`              | Port du serveur                        | `3000`        |
+| `NODE_ENV`          | Environnement (development/production) | `development` |
+| `DATABASE_URL`      | URL de connexion PostgreSQL            | —             |
+| `JWT_SECRET`        | Clé secrète pour les tokens JWT        | —             |
+| `JWT_EXPIRES_IN`    | Durée de validité des tokens           | `24h`         |
+| `RESEND_API_KEY`    | Clé API Resend (envoi d'emails)        | —             |
+| `RESEND_FROM_EMAIL` | Adresse email d'expédition             | —             |
 
 ## Docker
 
@@ -115,20 +72,40 @@ docker run -p 3000:3000 --env-file .env freelanceflow-back
 ```
 ├── src/
 │   ├── __tests__/        # Tests unitaires et d'intégration
-│   ├── config/           # Configuration (base de données)
+│   ├── config/           # Configuration (BDD, cache, upload)
 │   ├── controllers/      # Logique des contrôleurs
-│   ├── middlewares/       # Middlewares (auth JWT, etc.)
+│   ├── middlewares/      # Middlewares (auth JWT, etc.)
 │   ├── models/           # Modèles Sequelize
 │   ├── routes/           # Définition des routes
 │   ├── services/         # Logique métier
 │   └── app.js            # Configuration Express
 ├── migrations/           # Migrations Sequelize
-├── seeders/              # Seeds de données
+├── tests/loads/          # Tests de charge k6
 ├── .github/workflows/    # Pipelines CI/CD
 ├── server.js             # Point d'entrée
 ├── Dockerfile            # Image Docker
 └── package.json
 ```
+
+## Export CSV
+
+Les clients et les factures peuvent être exportés en CSV (délimiteur `;`, encodage UTF-8).
+
+- `GET /api/clients/export` — une ligne par client, avec toutes les informations d'adresse
+- `GET /api/invoices/export` — une ligne par ligne de facture, avec les informations de la facture répétées
+
+Le fichier est retourné avec le header `Content-Disposition: attachment` pour déclencher le téléchargement.
+
+## Envoi d'email
+
+Une facture peut être envoyée par email au client via :
+
+```
+POST /api/invoices/:id/send
+Authorization: Bearer <token>
+```
+
+L'envoi utilise le service **Resend** (configuré via `RESEND_API_KEY` et `RESEND_FROM_EMAIL`).
 
 ## CI/CD
 
@@ -200,3 +177,95 @@ Si un seuil est dépassé, k6 termine avec un code d'erreur non nul (la pipeline
 
 Le smoke test s'exécute automatiquement à chaque Pull Request vers `develop` ou `main` via le workflow `.github/workflows/load-test.yml`.
 
+## Cache
+
+L'API utilise un cache en mémoire via `node-cache` pour réduire la charge sur la base de données.
+
+### Routes mises en cache
+
+| Route | Clé de cache | TTL |
+|---|---|---|
+| `GET /api/clients` | `clients_{userId}` | 60s |
+| `GET /api/services` | `services_{userId}` | 60s |
+| `GET /api/invoices` | `invoices_{userId}` | 60s |
+
+### Fonctionnement
+
+- Le cache est isolé **par utilisateur** via la clé `{ressource}_{userId}` — un utilisateur ne peut jamais accéder aux données d'un autre.
+- Au premier appel (cache miss), la donnée est récupérée depuis la BDD puis stockée en cache.
+- Aux appels suivants (cache hit), la donnée est retournée directement depuis la mémoire, sans requête BDD.
+- Le cache est **invalidé automatiquement** à chaque mutation (`POST`, `PUT`, `DELETE`) pour garantir la cohérence des données.
+- Le TTL de 60 secondes sert de filet de sécurité en cas d'invalidation manquée.
+
+### Configuration
+
+Le cache est instancié une seule fois dans `src/config/cache.js` et partagé par tous les services. Modifier le TTL par défaut à cet endroit suffit à l'appliquer globalement.
+
+## Rate Limiting
+
+L'API applique un rate limit global sur toutes les routes via `express-rate-limit`.
+
+### Configuration
+
+| Paramètre | Valeur |
+|---|---|
+| Fenêtre de temps | 15 minutes |
+| Requêtes max par IP | 100 |
+| Code de réponse en cas de dépassement | `429 Too Many Requests` |
+
+### Comportement
+
+- Le compteur est **par adresse IP** et s'applique à toutes les routes sans exception.
+- Chaque réponse inclut les headers suivants :
+  - `RateLimit` — limite et nombre de requêtes restantes
+  - `RateLimit-Policy` — détail de la politique appliquée
+- En cas de dépassement, l'API retourne :
+
+```json
+HTTP 429
+{ "message": "Too many requests, please try again later." }
+```
+
+### Test du rate limit
+
+Un scénario k6 dédié permet de vérifier que le blocage intervient bien après 100 requêtes :
+
+```bash
+k6 run --env BASE_URL=http://localhost:3000 tests/loads/scenarios/rate-limit.js
+```
+
+Ce scénario envoie 110 requêtes depuis un seul VU sans pause et vérifie qu'au moins une réponse 429 est reçue.
+
+## Logo utilisateur
+
+Les utilisateurs peuvent uploader un logo qui sera intégré automatiquement dans leurs factures PDF.
+
+### Upload
+
+```
+POST /api/auth/logo
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+Champ : logo (fichier image)
+```
+
+Formats acceptés : `.jpg`, `.jpeg`, `.png`
+Taille max : **2 MB**
+
+### Stockage
+
+Le logo est converti en **base64** et stocké directement dans la colonne `logo_data` (type `TEXT`) de la table `users`. Aucun fichier n'est écrit sur le disque, ce qui rend la solution compatible Docker sans configuration de volume.
+
+### Récupération
+
+```
+GET /api/auth/me
+Authorization: Bearer <token>
+```
+
+La réponse inclut le champ `logo_data` au format data URI (`data:image/png;base64,...`), utilisable directement comme attribut `src` d'une balise `<img>`.
+
+### Intégration PDF
+
+Lors de la génération d'une facture (`GET /api/invoices/:id/pdf`), le logo est automatiquement affiché en haut à gauche du document si l'utilisateur en a uploadé un.

@@ -27,8 +27,24 @@ const Client = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    address: {
-      type: DataTypes.TEXT,
+    address_line1: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    address_line2: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    zip_code: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    city: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    country: {
+      type: DataTypes.STRING,
       allowNull: true,
     },
   },

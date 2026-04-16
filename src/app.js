@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 
 const routes = require('./routes');
 
@@ -9,6 +10,15 @@ const app = express();
 // Security middlewares
 app.use(helmet());
 app.use(cors());
+
+// Rate limiting — 100 requêtes max par IP toutes les 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-8',
+  message: { message: 'Too many requests, please try again later.' },
+});
+app.use(limiter);
 
 // Body parsing
 app.use(express.json());

@@ -43,8 +43,17 @@ async function clean() {
     return;
   }
 
-  // Cascade handled by DB (onDelete: CASCADE on all child models)
+  // Suppression dans le bon ordre pour respecter les contraintes FK
+  const invoices = await Invoice.findAll({ where: { user_id: userIds } });
+  const invoiceIds = invoices.map((inv) => inv.id);
+  if (invoiceIds.length > 0) {
+    await InvoiceLine.destroy({ where: { invoice_id: invoiceIds } });
+  }
+  await Invoice.destroy({ where: { user_id: userIds } });
+  await Client.destroy({ where: { user_id: userIds } });
+  await Service.destroy({ where: { user_id: userIds } });
   await User.destroy({ where: { id: userIds } });
+
   console.log(`Deleted ${userIds.length} load test users (and their data).`);
 }
 
@@ -63,7 +72,10 @@ async function seed() {
         password_hash: passwordHash,
         first_name: `Load`,
         last_name: `User${i}`,
-        adress: '1 rue du Test, 75000 Paris',
+        address_line1: '1 rue du Test',
+        zip_code: '75000',
+        city: 'Paris',
+        country: 'France',
       });
     }
 
@@ -75,7 +87,10 @@ async function seed() {
         name: `Client Load ${i}`,
         email: `client${i}@loadtest.internal`,
         company: `Acme Load ${i}`,
-        address: '2 avenue du Client, 75001 Paris',
+        address_line1: '2 avenue du Client',
+        zip_code: '75001',
+        city: 'Paris',
+        country: 'France',
       });
     }
 

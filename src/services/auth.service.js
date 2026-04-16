@@ -4,7 +4,17 @@ const User = require('../models/user.model');
 
 const SALT_ROUNDS = 10;
 
-async function register({ email, password, first_name, last_name, adress }) {
+async function register({
+  email,
+  password,
+  first_name,
+  last_name,
+  address_line1,
+  address_line2,
+  zip_code,
+  city,
+  country,
+}) {
   const existing = await User.findOne({ where: { email } });
   if (existing) {
     const error = new Error('Email already in use');
@@ -19,7 +29,11 @@ async function register({ email, password, first_name, last_name, adress }) {
     password_hash,
     first_name,
     last_name,
-    adress,
+    address_line1,
+    address_line2,
+    zip_code,
+    city,
+    country,
   });
 
   return {
@@ -54,7 +68,19 @@ async function login({ email, password }) {
 
 async function getMe(userId) {
   const user = await User.findByPk(userId, {
-    attributes: ['id', 'email', 'first_name', 'last_name', 'adress', 'created_at'],
+    attributes: [
+      'id',
+      'email',
+      'first_name',
+      'last_name',
+      'address_line1',
+      'address_line2',
+      'zip_code',
+      'city',
+      'country',
+      'logo_data',
+      'created_at',
+    ],
   });
 
   if (!user) {
@@ -66,4 +92,38 @@ async function getMe(userId) {
   return user;
 }
 
-module.exports = { register, login, getMe };
+async function updateMe(
+  userId,
+  { email, first_name, last_name, address_line1, address_line2, zip_code, city, country }
+) {
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 404;
+    throw error;
+  }
+
+  if (email && email !== user.email) {
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      const error = new Error('Email already in use');
+      error.status = 409;
+      throw error;
+    }
+  }
+
+  await user.update({
+    email,
+    first_name,
+    last_name,
+    address_line1,
+    address_line2,
+    zip_code,
+    city,
+    country,
+  });
+
+  return user;
+}
+
+module.exports = { register, login, getMe, updateMe };

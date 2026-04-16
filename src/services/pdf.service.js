@@ -7,7 +7,21 @@ async function generateInvoicePdf(invoiceId, userId) {
     include: [
       { model: Client },
       { model: InvoiceLine, include: [{ model: Service }] },
-      { model: User, attributes: ['id', 'first_name', 'last_name', 'email', 'adress'] },
+      {
+        model: User,
+        attributes: [
+          'id',
+          'first_name',
+          'last_name',
+          'email',
+          'address_line1',
+          'address_line2',
+          'zip_code',
+          'city',
+          'country',
+          'logo_data',
+        ],
+      },
     ],
   });
 
@@ -23,33 +37,95 @@ async function generateInvoicePdf(invoiceId, userId) {
   const client = invoice.Client;
   const lines = invoice.InvoiceLines || [];
 
-  doc.fontSize(20).text('FACTURE', { align: 'right' });
-  doc.moveDown(0.5);
-
-  doc.fontSize(10);
-  doc.text(`${user.first_name} ${user.last_name}`, 50, 80);
-  doc.text(user.email);
-  if (user.adress) doc.text(user.adress);
-
+  // --- En-tête : logo à gauche, titre FACTURE + infos à droite ---
   const invoiceNumber = `INV-${String(invoice.id).padStart(5, '0')}`;
   const issuedDate = invoice.issued_at
     ? new Date(invoice.issued_at).toLocaleDateString('fr-FR')
     : '-';
 
-  doc.text(`Facture N: ${invoiceNumber}`, 350, 80);
-  doc.text(`Date: ${issuedDate}`, 350);
-  doc.text(`Statut: ${invoice.status}`, 350);
+  if (user.logo_data) {
+    try {
+      const base64 = user.logo_data.split(',')[1];
+      const buffer = Buffer.from(base64, 'base64');
+      doc.image(buffer, 50, 45, { fit: [120, 60] });
+    } catch {
+      // données corrompues ou format non supporté, on passe
+    }
+  }
 
-  doc.moveDown(2);
-  const clientY = 160;
-  doc.fontSize(12).text('Client', 50, clientY);
-  doc.fontSize(10);
-  doc.text(client.name);
-  if (client.company) doc.text(client.company);
-  if (client.address) doc.text(client.address);
-  doc.text(client.email);
+  doc.fontSize(22).font('Helvetica-Bold').text('FACTURE', 350, 45, { width: 200, align: 'right' });
+  doc.fontSize(10).font('Helvetica');
+  doc.text(`N° : ${invoiceNumber}`, 350, 75, { width: 200, align: 'right' });
+  doc.text(`Date : ${issuedDate}`, 350, 89, { width: 200, align: 'right' });
+  doc.text(`Statut : ${invoice.status}`, 350, 103, { width: 200, align: 'right' });
 
-  const tableTop = 260;
+  // --- Section EMETTEUR (gauche) / DESTINATAIRE (droite) ---
+  const partiesY = 170;
+  const leftX = 50;
+  const colWidth = 230;
+  const rightX = 545 - colWidth;
+
+  const rightOpts = { width: colWidth, align: 'right' };
+
+  doc.fontSize(11).font('Helvetica-Bold');
+  doc.text('ÉMETTEUR', leftX, partiesY, { width: colWidth });
+  doc.text('DESTINATAIRE', rightX, partiesY, rightOpts);
+
+  doc.fontSize(10).font('Helvetica');
+  let emetteurY = partiesY + 24;
+  doc.text(`${user.first_name} ${user.last_name}`, leftX, emetteurY, { width: colWidth });
+  emetteurY += 14;
+  doc.text(user.email, leftX, emetteurY, { width: colWidth });
+  emetteurY += 14;
+  if (user.address_line1) {
+    doc.text(user.address_line1, leftX, emetteurY, { width: colWidth });
+    emetteurY += 14;
+  }
+  if (user.address_line2) {
+    doc.text(user.address_line2, leftX, emetteurY, { width: colWidth });
+    emetteurY += 14;
+  }
+  if (user.zip_code || user.city) {
+    doc.text(`${user.zip_code ?? ''} ${user.city ?? ''}`.trim(), leftX, emetteurY, {
+      width: colWidth,
+    });
+    emetteurY += 14;
+  }
+  if (user.country) {
+    doc.text(user.country, leftX, emetteurY, { width: colWidth });
+  }
+
+  let destinataireY = partiesY + 24;
+  doc.text(client.name, rightX, destinataireY, rightOpts);
+  destinataireY += 14;
+  if (client.company) {
+    doc.text(client.company, rightX, destinataireY, rightOpts);
+    destinataireY += 14;
+  }
+  if (client.address_line1) {
+    doc.text(client.address_line1, rightX, destinataireY, rightOpts);
+    destinataireY += 14;
+  }
+  if (client.address_line2) {
+    doc.text(client.address_line2, rightX, destinataireY, rightOpts);
+    destinataireY += 14;
+  }
+  if (client.zip_code || client.city) {
+    doc.text(
+      `${client.zip_code ?? ''} ${client.city ?? ''}`.trim(),
+      rightX,
+      destinataireY,
+      rightOpts
+    );
+    destinataireY += 14;
+  }
+  if (client.country) {
+    doc.text(client.country, rightX, destinataireY, rightOpts);
+    destinataireY += 14;
+  }
+  doc.text(client.email, rightX, destinataireY, rightOpts);
+
+  const tableTop = Math.max(emetteurY, destinataireY) + 60;
   const col = { label: 50, qty: 280, price: 360, total: 460 };
 
   doc.fontSize(10).font('Helvetica-Bold');
