@@ -81,6 +81,8 @@ async function sendEmail(req, res, next) {
       pdfBuffer,
     });
 
+    await invoiceService.update(req.params.id, { status: 'sent' }, req.user.id);
+
     res.json({ message: 'Invoice sent successfully', emailId: data.id });
   } catch (error) {
     next(error);
